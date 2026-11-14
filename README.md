@@ -1,91 +1,73 @@
 # Think
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.3+-brightgreen?style=flat-square)](https://minecraft.net)
-[![Fabric](https://img.shields.io/badge/Loader-Fabric-blue?style=flat-square)](https://fabricmc.net)
-[![Client-side](https://img.shields.io/badge/Side-Client-orange?style=flat-square)](https://modrinth.com)
+> 适用于 Minecraft 26.3 (1.21.6+) 的 Fabric 客户端辅助模组。
 
-**Think** 是一款专为速通（Speedrunning）、生电（Technical Minecraft）和日常生存设计的**纯客户端**辅助模组。它将复杂的要塞定位、地狱交通计算与 FPS 级别的敌情预警，封装在了一个拥有现代交互动画的环形菜单中。
+Think 是一个纯客户端的辅助模组，主要面向速通和生电玩家。它把要塞定位、下界坐标换算、实体威胁预警这几个常用功能整合进了一个轮盘菜单，按 V 键即可唤出，不需要记快捷键。
 
-**Think** is a lightweight, **client-side** utility mod designed for speedrunning, technical survival, and daily gameplay. It packs advanced stronghold triangulation, Nether transit calculation, and FPS-style threat alerts into a modern, radial-menu-driven interface.
+A client-side utility mod for Minecraft 26.3 (1.21.6+) on Fabric. It is aimed at speedrunners and technical players, bundling stronghold triangulation, Nether coordinate conversion, and entity threat alerts into a single radial menu bound to the V key.
 
 ---
 
-## 🌟 核心特色 / Key Features
+## 功能 / Features
 
-### 🎯 1. 科学且精准的末影之眼三角定位 (Precision Eye Triangulation)
-不再盲目寻找要塞。按下轮盘菜单开始定位，系统会通过 HUD 逐步引导你完成“投掷-移动-再投掷”的标准流程。
-*   **底层算法**：精准采样末影之眼实体的初始速度向量，配合克莱默法则（Cramer's Rule）求解交点。
-*   **智能引导**：在聊天栏和 HUD 顶部实时提示当前进度、还需移动的距离以及是否满足计算夹角。
-*   **纯视觉反馈**：计算完成后，HUD 会出现一个平滑旋转的**白色箭头**，带你直奔要塞。
-> *No more blind searching. Initiate the locator from the radial menu, and let the HUD guide you through the standard "throw-move-throw" process. Utilizes precise velocity sampling and Cramer's Rule for intersection calculation, pointing you to the stronghold with a smoothly rotating white arrow.*
+### 末影之眼三角定位 / Eye Triangulation
 
-### 🧭 2. 动态双模式 HUD 导航 (Dual-Mode HUD Navigation)
-*   **白色箭头**：指向末影之眼计算出的要塞。
-*   **蓝色箭头**：指向你自定义的传送门目标。
-*   **Y 轴高度提示**：目标在上方或下方时，箭头下方会贴心地显示 `↑ 15` 或 `↓ 8`。
-*   **坐标死区防抖**：采用高频滤波与 lerp 平滑插值，告别低帧率下箭头“一抖一抖”的糟糕体验。
-> *White arrow for stronghold, Blue arrow for custom portal targets. Features Y-axis height indicators (e.g., `↑ 15`) and deadzone anti-shake technology to ensure smooth camera tracking.*
+从轮盘菜单启动定位后，模组会在 HUD 顶部显示当前进度。投掷第一颗末影之眼会记录方向，随后提示你移动到合适位置再投掷第二颗，最终由两条射线求交点得出要塞坐标。
 
-### 💣 3. FPS 级别的实体威胁预警 (FPS-Style Threat Alerts)
-仿照现代射击游戏的手榴弹警告系统，专为应对苦力怕等危险实体设计。
-*   **视野内**：目标被**红色动态瞄框**锁定，距离越近（<4格），闪烁越快，压迫感拉满。
-*   **视野外**：在屏幕边缘生成**红色感叹号与指向箭头**，同方向多个敌人会自动合并为 `×3` 指示器。
-*   **高度自定义**：支持通过指令添加任何实体作为警告目标（如 `player` 或其他怪物），自定义探测与危险半径。
-*   **动态音效**：极度危险时播放可自定义的电子警报音。
-> *Modern shooter-style grenade alerts for Creepers and beyond. In-view targets are locked with a pulsing red box; off-screen threats appear as edge indicators with merged counts (`×3`). Fully customizable entities, ranges, and alert sounds.*
+- 采样末影之眼生成时的速度向量作为方向依据
+- 会拒绝间距过近或夹角过小的投掷，避免误差过大
+- 定位完成后 HUD 底部会出现白色箭头指向要塞
 
-### 🌌 4. 地狱交通与传送门助手 (Nether Transit Assistant)
-搭建地狱交通的利器。
-*   **一键跨维设置**：站在主世界，呼出轮盘设置目标。进入下界后，蓝色箭头会自动进行 `8:1` 的坐标缩放，精准指引对应的下界坐标。
-> *The ultimate tool for Nether hubs. Set a target in the Overworld, and the blue arrow will automatically scale the coordinates (8:1) to guide you accurately in the Nether.*
+> After starting the locator from the radial menu, the HUD shows progress at the top of the screen. Throwing the first eye records its direction; you'll be prompted to move to a suitable position before throwing the second one. The stronghold position is then calculated as the intersection of two rays. Invalid throws (too close or nearly parallel) are rejected to keep the result accurate.
 
-### 🎨 5. 现代环形菜单与 UI (Modern Radial Menu & UI)
-*   按 **`V`** 键唤出带有 Q 弹动画（EaseOutCubic）的 8 扇区环形菜单。
-*   支持鼠标点击或键盘 **`1~8`** 数字键快速操作。
-*   原生支持 **Mod Menu**，所有功能开关、音效类型、检测范围均可通过图形化界面（GUI）修改。
-> *Press `V` to open a buttery-smooth radial menu. Supports mouse clicks or number keys `1-8`. Full GUI configuration via Mod Menu.*
+### HUD 导航 / HUD Navigation
 
----
+屏幕底部有两个箭头共用同一位置：
 
-## ⌨️ 快捷键与指令 / Controls & Commands
+- 白色箭头：指向末影之眼计算出的要塞
+- 蓝色箭头：指向你手动设置的传送门目标
 
-| 操作 (Action) | 快捷键 (Key) | 说明 (Description) |
-| :--- | :--- | :--- |
-| **打开轮盘菜单** (Open Radial Menu) | `V` | 核心交互入口，包含所有功能 (Core interactive hub) |
-| **选择功能** (Select Action) | 鼠标 / `1~8` | 滑动选择或直接按数字键 (Click or use num keys) |
-| **退出菜单** (Close Menu) | `ESC` 或 `V` | 平滑收起菜单 (Smoothly close) |
+设置跨维度目标时（比如在主世界设置、跑到下界），箭头会自动按 8:1 换算坐标。目标高度差超过 2 格时，箭头下方会显示 `↑ 12` 或 `↓ 6` 之类的提示。
 
-**高级指令 (Advanced Commands):**
-*   `/think status` - 查看当前三角定位状态 (Check locator status)
-*   `/think warn add <entity>` - 添加警示实体，如 `/think warn add zombie` (Add warning entities)
-*   `/think warn range <detect> <warn> <danger>` - 调整警示距离 (Adjust warning ranges)
-*   `/think portal where` - 快速获取当前坐标的异世界对应位置 (Get translated coords)
+移动和转向都加了平滑插值，正常游玩不会出现箭头抖动的情况。
+
+> Two arrows share the same position at the bottom of the screen: white for strongholds, blue for custom portal targets. Cross-dimension targets are automatically scaled 8:1. When the target's Y level differs by more than 2 blocks, a height indicator like `↑ 12` or `↓ 6` appears below the arrow. Position and rotation are smoothly interpolated so the arrow doesn't jitter during normal play.
+
+### 实体威胁预警 / Entity Threat Alerts
+
+默认只对苦力怕生效，但可以通过指令添加任意实体作为预警目标。
+
+- 在视野内：目标被红色方框锁定，距离越近方框越亮
+- 在视野外：在离目标最近的屏幕边缘生成红色警示图标，同方向多个敌人会合并显示为 ×3
+- 4 格内会播放警告音效（可在设置中更换或关闭）
+
+> Creepers are warned by default, but you can add any entity via command. In view: targets are marked with a red box that brightens as they approach. Out of view: a red alert icon appears on the nearest screen edge, and multiple threats in the same direction are merged into a ×3 indicator. A warning sound plays within 4 blocks (configurable).
+
+### 下界坐标换算 / Nether Coordinate Conversion
+
+设置传送门目标后，主世界和下界的坐标会自动换算。也可以直接用指令查询当前位置对应的另一维度坐标。
+
+> Portal targets are auto-converted between Overworld and Nether coordinates. You can also query the corresponding coordinates in the other dimension directly via command.
+
+### 轮盘菜单 / Radial Menu
+
+按 V 唤出，8 个功能按顺序排列在圆环上。支持鼠标点击，也可以按数字键 1~8 直接选择。再按 V 或 ESC 关闭。
+
+如果安装了 Mod Menu，可以在模组列表中直接打开设置界面调整各项参数。
+
+> Press V to open. Eight functions are arranged in a ring. Supports mouse clicks or number keys 1-8. Press V or ESC again to close. If Mod Menu is installed, the settings screen can be opened directly from the mod list.
 
 ---
 
-## ⚙️ 性能与安全性 / Performance & Safety
+## 快捷键 / Controls
 
-*   **纯客户端运行 (Client-Side Only)**：不发送任何自定义数据包，在所有反作弊服务器下绝对安全。
-*   **极致性能 (Optimized)**：实体制导采用 10Hz 扫描与哈希缓存；UI 渲染采用逐行极简绘制，拒绝掉帧。
-*   **数据本地化 (Local Config)**：所有设置自动保存至 `.minecraft/config/think.json`，随时备份，永不丢失。
-
----
-
-## 🛠️ 安装要求 / Requirements
-
-*   **Minecraft**: 26.3 (1.21.6+)
-*   **Loader**: Fabric Loader
-*   **依赖**: Fabric API
-*   **可选**: Mod Menu (用于图形化配置)
+| 按键 | 作用 |
+| :--- | :--- |
+| V | 打开 / 关闭轮盘菜单 |
+| 鼠标左键 / 右键 | 点击轮盘按钮 |
+| 1 ~ 8 | 快速选择对应功能 |
+| ESC | 关闭菜单 |
 
 ---
 
-<details>
-<summary>📜 语言支持 / Language Support</summary>
-
-*   English (US)
-*   简体中文 (Simplified Chinese)
-*   文言 (华夏) (Classical Chinese)
-</details>
-
-> 💡 **Tip**: 模组内置了详细的防误触机制，当你的末影之眼计算夹角过小时，系统会拒绝记录并提示你换个方向投掷，确保每一次导航都精确无误。
+## 指令 / Commands
