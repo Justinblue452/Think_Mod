@@ -5,7 +5,9 @@ import com.fun.client.util.HudConfig;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -26,7 +28,6 @@ public class EntityWarningRenderer {
         SmoothPos(float x, float y) { this.x = x; this.y = y; }
     }
 
-    // === 新增：清理缓存接口，供 ThinkClient 调用 ===
     public static void clearCache() {
         entityScreenCache.clear();
         edgeScreenCache.clear();
@@ -63,7 +64,6 @@ public class EntityWarningRenderer {
         List<EdgeCandidate> edgeCandidates = new ArrayList<>();
         var targets = EntityWarningDetector.getTargets();
 
-        // 清理不在目标列表中的实体的平滑缓存
         if (!entityScreenCache.isEmpty()) {
             entityScreenCache.keySet().removeIf(id -> {
                 for (var t : targets) if (t.entity().getId() == id) return false;
@@ -76,11 +76,7 @@ public class EntityWarningRenderer {
         for (var target : targets) {
             Entity entity = target.entity();
             float intensity = target.intensity();
-
-            // 如果进入危险范围，且开启了音效，标记需要播放声音
-            if (intensity >= 0.95f && HudConfig.soundEnabled) {
-                playSound = true;
-            }
+            if (intensity >= 0.95f && HudConfig.soundEnabled) playSound = true;
 
             Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
             Vec3 dir = center.subtract(eyePos).normalize();
@@ -120,16 +116,19 @@ public class EntityWarningRenderer {
             }
         }
 
-        // 播放警告音效（1秒冷却）
+        // === 改进的音效播放（动态注册表获取） ===
         if (playSound) {
             long now = System.currentTimeMillis();
-            if (now - lastSoundTime > 1000) {
-                player.playSound(SoundEvents.CREEPER_PRIMED, 0.5f, 1.0f);
+            if (now - lastSoundTime > 600) {
+                SoundEvent sound = getWarningSound();
+                if (sound != null) {
+                    // 音量 0.4、音高 1.8：清晰的电子警报，不刺耳
+                    player.playSound(sound, 0.4f, 1.8f);
+                }
                 lastSoundTime = now;
             }
         }
 
-        // ... 边缘指示器合并与绘制逻辑保持不变 ...
         if (edgeCandidates.isEmpty()) return;
 
         edgeCandidates.sort(Comparator.comparingDouble(EdgeCandidate::angle));
@@ -170,7 +169,27 @@ public class EntityWarningRenderer {
         }
     }
 
-    // ... 下方 drawIndicator, angleDiff, drawThickLine 等方法保持不变 ...
+    /**
+     * 根据配置的音效类型返回对应 SoundEvent
+     * 使用 BuiltInRegistries 动态获取，避免 SoundEvents 静态字段的版本差异
+     */
+    private static SoundEvent getWarningSound() {
+        String soundPath = switch (HudConfig.warningSound) {
+            case "orb" -> "entity.experience_orb.pickup";
+            case "bit" -> "block.note_block.bit";
+            case "bell" -> "block.note_block.bell";
+            case "pling" -> "block.note_block.pling";
+            default -> "block.note_block.pling";
+        };
+
+        Identifier id = Identifier.fromNamespaceAndPath("minecraft", soundPath);
+
+        // 获取 Optional<Reference<SoundEvent>>，提取 value()，如果不存在则返回 null
+        return BuiltInRegistries.SOUND_EVENT.get(id)
+                .map(net.minecraft.core.Holder.Reference::value)
+                .orElse(null);
+    }
+
     private static double angleDiff(double a, double b) {
         double d = Math.abs(a - b) % (2 * Math.PI);
         return d > Math.PI ? 2 * Math.PI - d : d;

@@ -10,7 +10,6 @@ public class HudConfig {
     public static int arrowX = 0;
     public static int arrowY = 75;
 
-    // 新增：高度差指示和音效开关
     public static boolean showYAxis = true;
     public static boolean soundEnabled = true;
 
@@ -20,4 +19,7 @@ public class HudConfig {
     public static double warningRange = 8.0;
     public static double dangerRange = 4.0;
     public static int maxWarningEntities = 6;
+
+    // 音效类型: "pling"（音符盒）、"orb"（经验球）、"bit"（8-bit 电子音）、"bell"（铃铛）
+    public static String warningSound = "pling";
 }

@@ -53,5 +53,10 @@
   "think.radial.reset_all": "全部重置",
   "think.locate.cancelled": "§e[Think] 已取消当前定位会话",
   "think.locate.none": "§e[Think] 当前没有进行中的定位",
-  "think.command.reset_all": "§a[Think] 已清除所有任务与定位数据"
+  "think.command.reset_all": "§a[Think] 已清除所有任务与定位数据",
+  "think.config.sound_type": "警告音效",
+  "think.sound.pling": "音符盒叮咚",
+  "think.sound.orb": "经验球",
+  "think.sound.bit": "8-bit 电子音",
+  "think.sound.bell": "铃铛"
 }

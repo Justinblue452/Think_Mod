@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 
 public class ThinkConfigScreen extends Screen {
     private final Screen parent;
+    private static final String[] SOUND_KEYS = {"pling", "orb", "bit", "bell"};
 
     public ThinkConfigScreen(Screen parent) {
         super(Component.translatable("think.config.title"));
@@ -18,7 +19,7 @@ public class ThinkConfigScreen extends Screen {
     @Override
     protected void init() {
         int centerX = this.width / 2;
-        int centerY = this.height / 2 - 30;
+        int centerY = this.height / 2 - 50;
         int btnW = 150, btnH = 20, gap = 24;
 
         // 1. HUD 开关
@@ -41,7 +42,7 @@ public class ThinkConfigScreen extends Screen {
                 }
         ).bounds(centerX + 5, centerY, btnW, btnH).build());
 
-        // 3. Y轴提示开关
+        // 3. Y 轴提示开关
         this.addRenderableWidget(Button.builder(
                 toggleText("think.config.yaxis", HudConfig.showYAxis),
                 b -> {
@@ -61,7 +62,21 @@ public class ThinkConfigScreen extends Screen {
                 }
         ).bounds(centerX + 5, centerY + gap, btnW, btnH).build());
 
-        // 5. 调整警告范围
+        // 5. 警告音效选择器（循环切换）
+        this.addRenderableWidget(Button.builder(
+                soundText(),
+                b -> {
+                    int idx = 0;
+                    for (int i = 0; i < SOUND_KEYS.length; i++) {
+                        if (SOUND_KEYS[i].equals(HudConfig.warningSound)) { idx = i; break; }
+                    }
+                    HudConfig.warningSound = SOUND_KEYS[(idx + 1) % SOUND_KEYS.length];
+                    b.setMessage(soundText());
+                    ConfigManager.save();
+                }
+        ).bounds(centerX - btnW - 5, centerY + gap * 2, btnW * 2 + 10, btnH).build());
+
+        // 6. 调整警告范围
         this.addRenderableWidget(Button.builder(
                 Component.translatable("think.config.range", (int)HudConfig.detectRange, (int)HudConfig.warningRange, (int)HudConfig.dangerRange),
                 b -> {
@@ -75,9 +90,9 @@ public class ThinkConfigScreen extends Screen {
                     b.setMessage(Component.translatable("think.config.range", (int)HudConfig.detectRange, (int)HudConfig.warningRange, (int)HudConfig.dangerRange));
                     ConfigManager.save();
                 }
-        ).bounds(centerX - btnW - 5, centerY + gap * 2, btnW * 2 + 10, btnH).build());
+        ).bounds(centerX - btnW - 5, centerY + gap * 3, btnW * 2 + 10, btnH).build());
 
-        // 6. 打开 HUD 位置编辑
+        // 7. 打开 HUD 位置编辑
         this.addRenderableWidget(Button.builder(
                 Component.translatable("think.config.editor"),
                 b -> {
@@ -85,9 +100,9 @@ public class ThinkConfigScreen extends Screen {
                         this.minecraft.gui.setScreen(new HudEditorScreen());
                     }
                 }
-        ).bounds(centerX - btnW - 5, centerY + gap * 3, btnW * 2 + 10, btnH).build());
+        ).bounds(centerX - btnW - 5, centerY + gap * 4, btnW * 2 + 10, btnH).build());
 
-        // 7. 完成/返回
+        // 8. 完成/返回
         this.addRenderableWidget(Button.builder(
                 Component.translatable("gui.done"),
                 b -> {
@@ -95,7 +110,7 @@ public class ThinkConfigScreen extends Screen {
                         this.minecraft.gui.setScreen(this.parent);
                     }
                 }
-        ).bounds(centerX - btnW / 2, centerY + gap * 4 + 10, btnW, btnH).build());
+        ).bounds(centerX - btnW / 2, centerY + gap * 5 + 10, btnW, btnH).build());
     }
 
     private Component toggleText(String key, boolean state) {
@@ -103,10 +118,15 @@ public class ThinkConfigScreen extends Screen {
                 .append(Component.translatable(state ? "think.state.on" : "think.state.off"));
     }
 
+    private Component soundText() {
+        return Component.translatable("think.config.sound_type")
+                .append(": ")
+                .append(Component.translatable("think.sound." + HudConfig.warningSound));
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
         super.extractRenderState(g, mouseX, mouseY, delta);
-        g.fill(0, 0, this.width, this.height, 0x80000000);
         g.text(this.font, this.title, (this.width - this.font.width(this.title)) / 2, 20, 0xFFFFFFFF, false);
     }
 

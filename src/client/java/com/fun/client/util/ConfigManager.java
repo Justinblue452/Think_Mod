@@ -29,7 +29,6 @@ public class ConfigManager {
         boolean showArrow = true;
         int arrowX = 0;
         int arrowY = 75;
-
         boolean showYAxis = true;
         boolean soundEnabled = true;
 
@@ -39,6 +38,7 @@ public class ConfigManager {
         double warningRange = 8.0;
         double dangerRange = 4.0;
         int maxWarningEntities = 6;
+        String warningSound = "pling";
 
         Double portalX = null;
         Double portalY = null;
@@ -49,10 +49,7 @@ public class ConfigManager {
 
     public static void load() {
         try {
-            if (!Files.exists(CONFIG_PATH)) {
-                save();
-                return;
-            }
+            if (!Files.exists(CONFIG_PATH)) { save(); return; }
             try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
                 Data d = GSON.fromJson(reader, Data.class);
                 if (d != null) {
@@ -70,6 +67,7 @@ public class ConfigManager {
                     HudConfig.warningRange = d.warningRange;
                     HudConfig.dangerRange = d.dangerRange;
                     HudConfig.maxWarningEntities = d.maxWarningEntities;
+                    if (d.warningSound != null) HudConfig.warningSound = d.warningSound;
 
                     if (d.portalX != null && d.portalZ != null) {
                         PortalAssistant.ArrowMode mode = "PORTAL".equals(d.arrowMode)
@@ -82,11 +80,11 @@ public class ConfigManager {
                 }
             }
         } catch (IOException | JsonParseException e) {
-            System.err.println("[Think] 配置文件损坏或为空，将重置为默认配置...");
+            System.err.println("[Think] 配置文件损坏，重置为默认配置...");
             e.printStackTrace();
             save();
         } catch (Exception e) {
-            System.err.println("[Think] 加载配置时发生未知错误，将重置为默认配置...");
+            System.err.println("[Think] 加载配置失败，重置为默认配置...");
             e.printStackTrace();
             save();
         }
@@ -109,6 +107,7 @@ public class ConfigManager {
             d.warningRange = HudConfig.warningRange;
             d.dangerRange = HudConfig.dangerRange;
             d.maxWarningEntities = HudConfig.maxWarningEntities;
+            d.warningSound = HudConfig.warningSound;
 
             double tx = PortalAssistant.getTargetX();
             double ty = PortalAssistant.getTargetY();

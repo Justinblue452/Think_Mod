@@ -26,75 +26,155 @@ public class RadialMenuScreen extends Screen {
     }
 
     private final Action[] actions = Action.values();
-    private static final int INNER_RADIUS = 50;
-    private static final int OUTER_RADIUS = 110;
+    private static final int RING_RADIUS = 110;
+    private static final int BTN_W = 70;
+    private static final int BTN_H = 26;
+
+    private static final long ANIM_OPEN_MS = 150;
+    private static final long ANIM_CLOSE_MS = 120;
+
+    private long openTime = -1;
+    private long closeTime = -1;
+    private boolean closing = false;
+    private float animProgress = 0f;
+
+    private final Component[] labels;
+    private final Component title;
+    private final Component hint;
     private int hovered = -1;
 
     public RadialMenuScreen() {
         super(Component.translatable("think.radial.title"));
+        this.labels = new Component[actions.length];
+        for (int i = 0; i < actions.length; i++) {
+            this.labels[i] = Component.translatable(actions[i].key);
+        }
+        this.title = Component.translatable("think.radial.title");
+        this.hint = Component.translatable("think.radial.hint");
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        this.openTime = System.currentTimeMillis();
+        this.animProgress = 0f;
+        this.closing = false;
+        this.closeTime = -1;
+    }
+
+    @Override
+    public void onClose() {
+        if (closing) return;
+        closing = true;
+        closeTime = System.currentTimeMillis();
+    }
+
+    private void finalizeClose() {
+        closing = false;
+        super.onClose();
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
         super.extractRenderState(g, mouseX, mouseY, delta);
-        int cx = this.width / 2;
-        int cy = this.height / 2;
-        hovered = getHovered(mouseX, mouseY, cx, cy);
 
-        g.fill(0, 0, this.width, this.height, 0x40000000);
+        long now = System.currentTimeMillis();
 
-        int steps = 60;
-        for (int i = 0; i < actions.length; i++) {
-            boolean sel = (i == hovered);
-            int color = sel ? 0xCCFFFFFF : 0x80202020;
-            int textColor = sel ? 0xFF000000 : 0xFFFFFFFF;
-
-            double a0 = i * (2 * Math.PI / actions.length);
-            double a1 = (i + 1) * (2 * Math.PI / actions.length);
-            for (int s = 0; s <= steps; s++) {
-                double angle = a0 + (a1 - a0) * (s / (double) steps);
-                double cosA = Math.cos(angle), sinA = Math.sin(angle);
-                for (int r = INNER_RADIUS; r <= OUTER_RADIUS; r += 2) {
-                    int px = cx + (int)(cosA * r);
-                    int py = cy + (int)(sinA * r);
-                    g.fill(px, py, px + 2, py + 2, color);
-                }
+        if (closing) {
+            long elapsed = now - closeTime;
+            float linear = Math.min(1.0f, elapsed / (float) ANIM_CLOSE_MS);
+            animProgress = 1.0f - linear * linear;
+            if (elapsed >= ANIM_CLOSE_MS) {
+                finalizeClose();
+                return;
             }
-
-            double mid = (a0 + a1) / 2;
-            double tr = (INNER_RADIUS + OUTER_RADIUS) / 2.0;
-            int tx = cx + (int)(Math.cos(mid) * tr);
-            int ty = cy + (int)(Math.sin(mid) * tr);
-
-            // 数字索引（方便键盘玩家）
-            String num = String.valueOf(i + 1);
-            int nw = this.font.width(num);
-            g.text(this.font, num, tx - nw / 2, ty - 12, 0xFFFFAA00, true);
-
-            // 标签
-            Component label = Component.translatable(actions[i].key);
-            int w = this.font.width(label);
-            g.text(this.font, label, tx - w / 2, ty + 2, textColor, false);
+        } else {
+            long elapsed = now - openTime;
+            float linear = Math.min(1.0f, elapsed / (float) ANIM_OPEN_MS);
+            animProgress = 1.0f - (float) Math.pow(1.0f - linear, 3);
         }
 
-        Component hint = Component.translatable("think.radial.hint");
-        int hw = this.font.width(hint);
-        g.text(this.font, hint, cx - hw / 2, cy - 4, 0xFFFFFFFF, false);
+        int cx = this.width / 2;
+        int cy = this.height / 2;
+
+        hovered = (!closing && animProgress > 0.8f) ? getHovered(mouseX, mouseY, cx, cy) : -1;
+
+        int bgAlpha = (int) (0x40 * animProgress);
+        g.fill(0, 0, this.width, this.height, bgAlpha << 24);
+
+        for (int i = 0; i < actions.length; i++) {
+            double mid = (i + 0.5) * (2 * Math.PI / actions.length);
+            double currentRadius = RING_RADIUS * animProgress;
+            int bx = cx + (int) (Math.cos(mid) * currentRadius);
+            int by = cy + (int) (Math.sin(mid) * currentRadius);
+
+            int currentW = (int) (BTN_W * (0.5f + 0.5f * animProgress));
+            int currentH = (int) (BTN_H * (0.5f + 0.5f * animProgress));
+
+            int left = bx - currentW / 2;
+            int top = by - currentH / 2;
+
+            boolean isSel = (i == hovered);
+
+            int baseAlpha = (int) (0x80 * animProgress);
+            int selAlpha = (int) (0xDD * animProgress);
+            int bgColor = isSel ? ((selAlpha << 24) | 0xFFFFFF) : ((baseAlpha << 24) | 0x202020);
+            int textAlpha = (int) (255 * animProgress);
+            int textColor = isSel ? ((textAlpha << 24) | 0x000000) : ((textAlpha << 24) | 0xFFFFFF);
+
+            g.fill(left, top, left + currentW, top + currentH, bgColor);
+
+            if (isSel) {
+                int bAlpha = (int) (0xFF * animProgress);
+                int borderColor = (bAlpha << 24) | 0xFF4444;
+                g.fill(left, top, left + currentW, top + 2, borderColor);
+                g.fill(left, top + currentH - 2, left + currentW, top + currentH, borderColor);
+                g.fill(left, top, left + 2, top + currentH, borderColor);
+                g.fill(left + currentW - 2, top, left + currentW, top + currentH, borderColor);
+            }
+
+            if (animProgress > 0.2f) {
+                String num = String.valueOf(i + 1);
+                g.text(this.font, num, left + 4, top + currentH - 12,
+                        ((int) (255 * animProgress) << 24) | 0xFFAA00, true);
+
+                Component label = this.labels[i];
+                int w = this.font.width(label);
+                g.text(this.font, label, bx - w / 2, top + (currentH - 8) / 2, textColor, false);
+            }
+        }
+
+        if (animProgress > 0.5f) {
+            int centerAlpha = (int) (255 * (animProgress - 0.5f) * 2);
+            int color = (centerAlpha << 24) | 0xFFFFFF;
+            int tw = this.font.width(title);
+            g.text(this.font, title, cx - tw / 2, cy - 12, color, true);
+
+            int hintColor = (centerAlpha << 24) | 0xAAAAAA;
+            int hw = this.font.width(hint);
+            g.text(this.font, hint, cx - hw / 2, cy + 2, hintColor, false);
+        }
     }
 
     private int getHovered(double mx, double my, int cx, int cy) {
-        double dx = mx - cx, dy = my - cy;
-        double d2 = dx*dx + dy*dy;
-        if (d2 > INNER_RADIUS*INNER_RADIUS && d2 < OUTER_RADIUS*OUTER_RADIUS*1.5) {
-            double a = Math.atan2(dy, dx);
-            if (a < 0) a += 2*Math.PI;
-            return (int) Math.floor(a / (2*Math.PI / actions.length));
+        for (int i = 0; i < actions.length; i++) {
+            double mid = (i + 0.5) * (2 * Math.PI / actions.length);
+            int bx = cx + (int) (Math.cos(mid) * RING_RADIUS);
+            int by = cy + (int) (Math.sin(mid) * RING_RADIUS);
+            int left = bx - BTN_W / 2;
+            int top = by - BTN_H / 2;
+            if (mx >= left && mx <= left + BTN_W && my >= top && my <= top + BTN_H) {
+                return i;
+            }
         }
         return -1;
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (closing) return true;
+        if (animProgress < 0.8f) return true;
+
         int cx = this.width / 2, cy = this.height / 2;
         int idx = getHovered(event.x(), event.y(), cx, cy);
         if (idx >= 0 && idx < actions.length) {
@@ -109,16 +189,23 @@ public class RadialMenuScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == InputConstants.KEY_ESCAPE) { this.onClose(); return true; }
-        // 数字键 1-8 直接选择对应扇区
-        int key = event.key();
-        if (key >= InputConstants.KEY_1 && key <= InputConstants.KEY_8) {
-            int idx = key - InputConstants.KEY_1;
-            if (idx < actions.length) {
-                var player = this.minecraft != null ? this.minecraft.player : null;
-                if (player != null) player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1f, 1f);
-                executeAction(actions[idx]);
-                return true;
+        if (closing) return true;
+
+        if (event.key() == InputConstants.KEY_ESCAPE || event.key() == InputConstants.KEY_V) {
+            this.onClose();
+            return true;
+        }
+
+        if (animProgress >= 0.8f) {
+            int key = event.key();
+            if (key >= InputConstants.KEY_1 && key <= InputConstants.KEY_8) {
+                int idx = key - InputConstants.KEY_1;
+                if (idx < actions.length) {
+                    var player = this.minecraft != null ? this.minecraft.player : null;
+                    if (player != null) player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 1f, 1f);
+                    executeAction(actions[idx]);
+                    return true;
+                }
             }
         }
         return super.keyPressed(event);
@@ -128,10 +215,7 @@ public class RadialMenuScreen extends Screen {
         var client = this.minecraft;
         if (client == null || client.player == null || client.level == null) return;
         switch (action) {
-            case LOCATOR -> {
-                StrongholdLocator.startSession();
-                this.onClose();
-            }
+            case LOCATOR -> { StrongholdLocator.startSession(); this.onClose(); }
             case CANCEL_LOCATOR -> {
                 if (StrongholdLocator.getState() != StrongholdLocator.SessionState.IDLE) {
                     StrongholdLocator.reset();

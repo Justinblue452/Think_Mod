@@ -54,5 +54,10 @@
   "think.radial.reset_all": "盡清",
   "think.locate.cancelled": "§e[思] 尋蹤已止",
   "think.locate.none": "§e[思] 今無尋蹤之事",
-  "think.command.reset_all": "§a[思] 諸事與定位之數皆已清"
+  "think.command.reset_all": "§a[思] 諸事與定位之數皆已清",
+  "think.config.sound_type": "警音",
+  "think.sound.pling": "音石清鳴",
+  "think.sound.orb": "經驗之珠",
+  "think.sound.bit": "八位元",
+  "think.sound.bell": "鐘鳴"
 }

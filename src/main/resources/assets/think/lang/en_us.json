@@ -53,5 +53,10 @@
   "think.radial.reset_all": "Reset All",
   "think.locate.cancelled": "§e[Think] Current locator session cancelled",
   "think.locate.none": "§e[Think] No locator session is active",
-  "think.command.reset_all": "§a[Think] All tasks and data cleared"
+  "think.command.reset_all": "§a[Think] All tasks and data cleared",
+  "think.config.sound_type": "Warning Sound",
+  "think.sound.pling": "Note Block Pling",
+  "think.sound.orb": "XP Orb",
+  "think.sound.bit": "8-bit",
+  "think.sound.bell": "Bell"
 }
