@@ -1,0 +1,42 @@
+{
+  "key.category.think.main": "思・輔具",
+
+  "key.think.reset": "清定位之數",
+  "key.think.toggleHud": "啟閉懸示",
+  "key.think.editor": "整懸示之位",
+  "key.think.startLocate": "始尋終眇眼",
+
+  "think.screen.title": "思・懸示整位",
+  "think.screen.arrow": "矢",
+  "think.screen.info": "文牘",
+  "think.screen.hint": "曳白處以移其位，按 ESC 則退",
+
+  "think.hud.coord": "座標：%d, %d, %d",
+  "think.hud.facing": "所嚮：%s",
+  "think.hud.biome": "生態域：%s",
+  "think.hud.distance": "距標：%s 方",
+  "think.hud.distance.none": "距標：未定",
+  "think.hud.nether": "地府座標：%s",
+  "think.hud.overworld": "主界座標：%s",
+
+  "think.locate.start": "§e[思] 尋蹤已啟：請擲第一枚終眇眼",
+  "think.locate.first_recorded": "§e[思] 首枚已錄。請行逾二十方，轉向他處，再擲次枚",
+  "think.locate.too_close": "§c[思] 相距未遠（%d 方），請復行數步",
+  "think.locate.parallel": "§c[思] 二矢之向過近，請改途再擲",
+  "think.locate.done": "§a[思] 定位既成！標的：(%s, %s)",
+  "think.locate.failed": "§c[思] 交點未定，請續擲",
+
+  "think.session.waiting_first": "尋蹤中（0/2）：請擲第一枚終眇眼",
+  "think.session.move_more": "已錄（1/2）：尚需行 %d 方",
+  "think.session.ready": "已錄（1/2）：其位已宜 ✓ 請擲次枚",
+
+  "think.command.reset": "§a[思] 定位之數已清。",
+  "think.command.status.valid": "§a[思] 標的：(%s, %s)　矢數：%d",
+  "think.command.status.invalid": "§e[思] 尚無定標（所見之眼：%d，已錄之矢：%d）",
+  "think.command.hud": "§a[思] 懸示：%s",
+  "think.command.coord.nether": "§a[思] 地府對位：%s",
+  "think.command.coord.overworld": "§a[思] 主界對位：%s",
+  "think.command.tick": "§a[思] %d 刻 ≈ %s 秒",
+  "think.state.on": "啟",
+  "think.state.off": "閉"
+}

@@ -1,0 +1,41 @@
+{
+  "key.category.think.main": "Think 辅助",
+  "key.think.reset": "重置定位数据",
+  "key.think.toggleHud": "开关 HUD",
+  "key.think.editor": "打开 HUD 编辑",
+
+  "think.screen.title": "Think HUD 编辑器",
+  "think.screen.arrow": "箭头",
+  "think.screen.info": "信息面板",
+  "think.screen.hint": "拖动白色区域调整位置，按 ESC 退出",
+
+  "think.hud.coord": "坐标: %d, %d, %d",
+  "think.hud.facing": "朝向: %s",
+  "think.hud.biome": "生物群系: %s",
+  "think.hud.distance": "目标距离: %s 格",
+  "think.hud.distance.none": "目标距离: --",
+  "think.hud.nether": "下界坐标: %s",
+  "think.hud.overworld": "主世界坐标: %s",
+
+  "think.command.reset": "§a[Think] 定位数据已重置。",
+  "think.command.status.valid": "§a[Think] 目标: (%s, %s) 射线: %d",
+  "think.command.status.invalid": "§e[Think] 尚无有效目标 (检测到眼睛: %d, 已记录射线: %d)",
+  "think.command.hud": "§a[Think] HUD: %s",
+  "think.command.coord.nether": "§a[Think] 下界对应坐标: %s",
+  "think.command.coord.overworld": "§a[Think] 主世界对应坐标: %s",
+  "think.command.tick": "§a[Think] %d ticks ≈ %s 秒",
+  "think.state.on": "开",
+  "think.state.off": "关",
+  "key.think.startLocate": "开始末影之眼定位",
+
+  "think.locate.start": "§e[Think] 定位已激活：请投掷第 1 颗末影之眼",
+  "think.locate.first_recorded": "§e[Think] 已记录第 1 颗，请至少移动 20 格并改变方向后投掷第 2 颗",
+  "think.locate.too_close": "§c[Think] 距离过近（%d 格），请走远一些再投掷",
+  "think.locate.parallel": "§c[Think] 两条射线夹角过小，请换个方向投掷",
+  "think.locate.done": "§a[Think] 定位完成！目标: (%s, %s)",
+  "think.locate.failed": "§c[Think] 交点无效，请继续投掷下一颗",
+
+  "think.session.waiting_first": "定位中 (0/2)：请投掷第 1 颗末影之眼",
+  "think.session.move_more": "已记录 (1/2)：还需移动 %d 格",
+  "think.session.ready": "已记录 (1/2)：位置合适 ✓ 请投掷第 2 颗"
+}
