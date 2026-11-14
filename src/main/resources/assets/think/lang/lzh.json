@@ -1,16 +1,27 @@
 {
   "key.category.think.main": "思・輔具",
+  "key.think.radial": "啟思之輪盤",
 
-  "key.think.reset": "清定位之數",
-  "key.think.toggleHud": "啟閉懸示",
-  "key.think.editor": "整懸示之位",
-  "key.think.startLocate": "始尋終眇眼",
-  "key.think.showCoords": "示異界座標",
-  "key.think.togglePortalTarget": "置/除界門之標",
+  "think.radial.title": "思・輪盤",
+  "think.radial.hint": "擇其用",
+  "think.radial.locator": "尋堅城",
+  "think.radial.portal": "界門之標",
+  "think.radial.coord": "異界座標",
+  "think.radial.hud_editor": "整懸示",
+  "think.radial.hud_toggle": "啟閉懸示",
+  "think.radial.config": "設置",
 
   "think.screen.title": "思・懸示整位",
   "think.screen.arrow": "矢",
   "think.screen.hint": "曳白處以移其位，按 ESC 則退",
+
+  "think.config.title": "思・設置",
+  "think.config.hud": "懸示",
+  "think.config.sound": "聲效",
+  "think.config.yaxis": "高下提示",
+  "think.config.warn": "實體警示",
+  "think.config.range": "範圍：偵 %d / 警 %d / 危 %d",
+  "think.config.editor": "整懸示之位",
 
   "think.locate.start": "§e[思] 尋蹤已啟：請擲第一枚終眇眼",
   "think.locate.first_recorded": "§e[思] 首枚已錄。請行逾二十方，轉向他處，再擲次枚",
@@ -35,5 +46,8 @@
   "think.portal.toOverworld": "§b主界座標：%d, %d, %d",
   "think.portal.wrongDim": "§e此界不可易算座標",
   "think.portal.set": "§a界門之標已立：%d, %d",
-  "think.portal.cleared": "§e界門之標已除"
+  "think.portal.cleared": "§e界門之標已除",
+
+  "think.yaxis.up": "↑ %d",
+  "think.yaxis.down": "↓ %d"
 }

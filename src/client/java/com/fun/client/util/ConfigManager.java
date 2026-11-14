@@ -2,6 +2,7 @@ package com.fun.client.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -12,9 +13,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ConfigManager {
-    // 推荐加上 serializeSpecialFloatingPointValues() 作为双重保险，防止未来有其他 NaN 写入
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .serializeSpecialFloatingPointValues()
@@ -29,6 +30,9 @@ public class ConfigManager {
         int arrowX = 0;
         int arrowY = 75;
 
+        boolean showYAxis = true;
+        boolean soundEnabled = true;
+
         boolean showEntityWarning = true;
         List<String> warningEntityTypes = new ArrayList<>(List.of("minecraft:creeper"));
         double detectRange = 16.0;
@@ -36,9 +40,8 @@ public class ConfigManager {
         double dangerRange = 4.0;
         int maxWarningEntities = 6;
 
-        // 传送门目标持久化
-        // 改用 Double 包装类，如果未设置目标，就会序列化为 null（JSON 中直接省略该字段）
         Double portalX = null;
+        Double portalY = null;
         Double portalZ = null;
         String portalDim = "";
         String arrowMode = "STRONGHOLD";
@@ -46,7 +49,10 @@ public class ConfigManager {
 
     public static void load() {
         try {
-            if (!Files.exists(CONFIG_PATH)) { save(); return; }
+            if (!Files.exists(CONFIG_PATH)) {
+                save();
+                return;
+            }
             try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
                 Data d = GSON.fromJson(reader, Data.class);
                 if (d != null) {
@@ -54,26 +60,35 @@ public class ConfigManager {
                     HudConfig.showArrow = d.showArrow;
                     HudConfig.arrowX = d.arrowX;
                     HudConfig.arrowY = d.arrowY;
+                    HudConfig.showYAxis = d.showYAxis;
+                    HudConfig.soundEnabled = d.soundEnabled;
                     HudConfig.showEntityWarning = d.showEntityWarning;
-                    HudConfig.warningEntityTypes = new HashSet<>(d.warningEntityTypes);
+                    HudConfig.warningEntityTypes = d.warningEntityTypes != null
+                            ? new HashSet<>(d.warningEntityTypes)
+                            : new HashSet<>(Set.of("minecraft:creeper"));
                     HudConfig.detectRange = d.detectRange;
                     HudConfig.warningRange = d.warningRange;
                     HudConfig.dangerRange = d.dangerRange;
                     HudConfig.maxWarningEntities = d.maxWarningEntities;
 
-                    // 恢复传送门目标：判断是否为空
                     if (d.portalX != null && d.portalZ != null) {
                         PortalAssistant.ArrowMode mode = "PORTAL".equals(d.arrowMode)
                                 ? PortalAssistant.ArrowMode.PORTAL : PortalAssistant.ArrowMode.STRONGHOLD;
-                        PortalAssistant.restore(d.portalX, d.portalZ, d.portalDim, mode);
+                        double y = d.portalY != null ? d.portalY : 64.0;
+                        PortalAssistant.restore(d.portalX, y, d.portalZ, d.portalDim, mode);
                     } else {
-                        // 如果没有记录，确保助手状态是清空的
                         PortalAssistant.clearTarget();
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | JsonParseException e) {
+            System.err.println("[Think] 配置文件损坏或为空，将重置为默认配置...");
             e.printStackTrace();
+            save();
+        } catch (Exception e) {
+            System.err.println("[Think] 加载配置时发生未知错误，将重置为默认配置...");
+            e.printStackTrace();
+            save();
         }
     }
 
@@ -85,19 +100,22 @@ public class ConfigManager {
             d.showArrow = HudConfig.showArrow;
             d.arrowX = HudConfig.arrowX;
             d.arrowY = HudConfig.arrowY;
+            d.showYAxis = HudConfig.showYAxis;
+            d.soundEnabled = HudConfig.soundEnabled;
             d.showEntityWarning = HudConfig.showEntityWarning;
-            d.warningEntityTypes = new ArrayList<>(HudConfig.warningEntityTypes);
+            d.warningEntityTypes = HudConfig.warningEntityTypes != null
+                    ? new ArrayList<>(HudConfig.warningEntityTypes) : new ArrayList<>();
             d.detectRange = HudConfig.detectRange;
             d.warningRange = HudConfig.warningRange;
             d.dangerRange = HudConfig.dangerRange;
             d.maxWarningEntities = HudConfig.maxWarningEntities;
 
-            // 转换 NaN 为 null，防止 Gson 崩溃
             double tx = PortalAssistant.getTargetX();
+            double ty = PortalAssistant.getTargetY();
             double tz = PortalAssistant.getTargetZ();
             d.portalX = Double.isNaN(tx) ? null : tx;
+            d.portalY = Double.isNaN(ty) ? null : ty;
             d.portalZ = Double.isNaN(tz) ? null : tz;
-
             d.portalDim = PortalAssistant.getTargetDim();
             d.arrowMode = PortalAssistant.getArrowMode().name();
 

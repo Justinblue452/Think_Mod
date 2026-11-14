@@ -1,16 +1,26 @@
 {
   "key.category.think.main": "Think 辅助",
+  "key.think.radial": "唤出 Think 轮盘",
 
-  "key.think.reset": "重置定位数据",
-  "key.think.toggleHud": "开关 HUD",
-  "key.think.editor": "打开 HUD 编辑",
-  "key.think.startLocate": "开始末影之眼定位",
-  "key.think.showCoords": "显示异世界坐标",
-  "key.think.togglePortalTarget": "设置/清除传送门目标",
+  "think.radial.title": "Think 菜单",
+  "think.radial.hint": "选择功能",
+  "think.radial.locator": "定位要塞",
+  "think.radial.portal": "传送门目标",
+  "think.radial.coord": "异界坐标",
+  "think.radial.hud_editor": "编辑 HUD",
+  "think.radial.hud_toggle": "开关 HUD",
+  "think.radial.config": "设置",
 
   "think.screen.title": "Think HUD 编辑器",
   "think.screen.arrow": "箭头",
   "think.screen.hint": "拖动白色区域调整位置，按 ESC 退出",
+  "think.config.title": "Think 设置",
+  "think.config.hud": "HUD 显示",
+  "think.config.sound": "音效提示",
+  "think.config.yaxis": "Y轴高度",
+  "think.config.warn": "实体警告",
+  "think.config.range": "范围: 侦测 %d / 警告 %d / 危险 %d",
+  "think.config.editor": "编辑 HUD 位置",
 
   "think.locate.start": "§e[Think] 定位已激活：请投掷第 1 颗末影之眼",
   "think.locate.first_recorded": "§e[Think] 已记录第 1 颗，请至少移动 20 格并改变方向后投掷第 2 颗",
@@ -35,5 +45,8 @@
   "think.portal.toOverworld": "§b主世界坐标: %d, %d, %d",
   "think.portal.wrongDim": "§e当前维度不支持坐标转换",
   "think.portal.set": "§a已设置传送门目标: %d, %d",
-  "think.portal.cleared": "§e已清除传送门目标"
+  "think.portal.cleared": "§e已清除传送门目标",
+
+  "think.yaxis.up": "↑ %d",
+  "think.yaxis.down": "↓ %d"
 }

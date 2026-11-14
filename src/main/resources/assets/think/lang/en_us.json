@@ -1,16 +1,26 @@
 {
   "key.category.think.main": "Think Client",
+  "key.think.radial": "Open Think Radial Menu",
 
-  "key.think.reset": "Reset Locator Data",
-  "key.think.toggleHud": "Toggle HUD",
-  "key.think.editor": "Open HUD Editor",
-  "key.think.startLocate": "Start Eye Locator",
-  "key.think.showCoords": "Show Translated Coords",
-  "key.think.togglePortalTarget": "Set/Clear Portal Target",
+  "think.radial.title": "Think Menu",
+  "think.radial.hint": "Select Action",
+  "think.radial.locator": "Eye Locator",
+  "think.radial.portal": "Portal Target",
+  "think.radial.coord": "Translated Coords",
+  "think.radial.hud_editor": "Edit HUD",
+  "think.radial.hud_toggle": "Toggle HUD",
+  "think.radial.config": "Settings",
 
   "think.screen.title": "Think HUD Editor",
   "think.screen.arrow": "Arrow",
   "think.screen.hint": "Drag white areas to reposition. Press ESC to exit.",
+  "think.config.title": "Think Settings",
+  "think.config.hud": "HUD Display",
+  "think.config.sound": "Sound Alert",
+  "think.config.yaxis": "Y-Axis Height",
+  "think.config.warn": "Entity Warning",
+  "think.config.range": "Range: Detect %d / Warn %d / Danger %d",
+  "think.config.editor": "Edit HUD Position",
 
   "think.locate.start": "§e[Think] Locator activated: throw the 1st Eye of Ender",
   "think.locate.first_recorded": "§e[Think] 1st eye recorded. Move at least 20 blocks in a different direction, then throw the 2nd",
@@ -35,5 +45,8 @@
   "think.portal.toOverworld": "§bOverworld coords: %d, %d, %d",
   "think.portal.wrongDim": "§eCurrent dimension does not support conversion",
   "think.portal.set": "§aPortal target set at: %d, %d",
-  "think.portal.cleared": "§ePortal target cleared"
+  "think.portal.cleared": "§ePortal target cleared",
+
+  "think.yaxis.up": "↑ %d",
+  "think.yaxis.down": "↓ %d"
 }

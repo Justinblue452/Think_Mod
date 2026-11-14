@@ -3,6 +3,7 @@ package com.fun.client.render;
 import com.fun.client.util.ConfigManager;
 import com.fun.client.util.HudConfig;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -14,6 +15,20 @@ public class HudEditorScreen extends Screen {
 
     public HudEditorScreen() {
         super(Component.translatable("think.screen.title"));
+    }
+
+    @Override
+    protected void init() {
+        super.init(); // 必须调用
+        // 在屏幕底部增加一个前往设置界面的按钮
+        this.addRenderableWidget(Button.builder(
+                Component.translatable("think.config.title"),
+                b -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.gui.setScreen(new ThinkConfigScreen(this));
+                    }
+                }
+        ).bounds(this.width / 2 - 60, this.height - 30, 120, 20).build());
     }
 
     @Override
@@ -36,7 +51,10 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event.button() != 0) return super.mouseClicked(event, doubleClick);
+        // 先让按钮处理点击
+        if (super.mouseClicked(event, doubleClick)) return true;
+
+        if (event.button() != 0) return false;
         var client = this.minecraft;
         if (client == null) return false;
         int screenW = client.getWindow().getGuiScaledWidth();
@@ -54,7 +72,7 @@ public class HudEditorScreen extends Screen {
             startArrowY = HudConfig.arrowY;
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
+        return false;
     }
 
     @Override

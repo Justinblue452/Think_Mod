@@ -5,6 +5,7 @@ import com.fun.client.util.HudConfig;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -16,16 +17,20 @@ import java.util.List;
 import java.util.Map;
 
 public class EntityWarningRenderer {
-
-    // === 防抖缓存 ===
-    // 视野内实体的屏幕坐标平滑缓存 (Key: EntityId)
     private static final Map<Integer, SmoothPos> entityScreenCache = new HashMap<>();
-    // 边缘指示器的屏幕坐标平滑缓存 (基于排序后的索引)
     private static final List<SmoothPos> edgeScreenCache = new ArrayList<>();
+    private static long lastSoundTime = 0;
 
     private static class SmoothPos {
         float x, y;
         SmoothPos(float x, float y) { this.x = x; this.y = y; }
+    }
+
+    // === 新增：清理缓存接口，供 ThinkClient 调用 ===
+    public static void clearCache() {
+        entityScreenCache.clear();
+        edgeScreenCache.clear();
+        lastSoundTime = 0;
     }
 
     public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
@@ -36,13 +41,10 @@ public class EntityWarningRenderer {
         var player = client.player;
         if (player == null || client.level == null) return;
 
-        // 获取平滑时间
         float partialTick = delta.getGameTimeDeltaTicks() % 1.0f;
-
         int W = client.getWindow().getGuiScaledWidth();
         int H = client.getWindow().getGuiScaledHeight();
-        int cx = W / 2;
-        int cy = H / 2;
+        int cx = W / 2, cy = H / 2;
 
         Vec3 eyePos = player.getEyePosition(partialTick);
         Vec3 forward = player.getViewVector(partialTick);
@@ -52,9 +54,8 @@ public class EntityWarningRenderer {
         Vec3 up = right.cross(forward).normalize();
 
         double fov = client.options.fov().get();
-        double aspectRatio = (double) W / H;
         double tanHalfFovY = Math.tan(Math.toRadians(fov / 2.0));
-        double tanHalfFovX = tanHalfFovY * aspectRatio;
+        double tanHalfFovX = tanHalfFovY * ((double) W / H);
 
         float gameTime = client.level.getGameTime() + partialTick;
         float pulse = Mth.sin(gameTime * 0.15f) * 0.4f + 0.6f;
@@ -62,7 +63,7 @@ public class EntityWarningRenderer {
         List<EdgeCandidate> edgeCandidates = new ArrayList<>();
         var targets = EntityWarningDetector.getTargets();
 
-        // 清理已经不在目标列表中的实体平滑缓存，防止内存泄漏（目标极少，开销极低）
+        // 清理不在目标列表中的实体的平滑缓存
         if (!entityScreenCache.isEmpty()) {
             entityScreenCache.keySet().removeIf(id -> {
                 for (var t : targets) if (t.entity().getId() == id) return false;
@@ -70,21 +71,20 @@ public class EntityWarningRenderer {
             });
         }
 
+        boolean playSound = false;
+
         for (var target : targets) {
             Entity entity = target.entity();
             float intensity = target.intensity();
 
-            // 保留 3D 速度预判
-            Vec3 rawPos = entity.position();
-            Vec3 predicted = rawPos.add(entity.getDeltaMovement().scale(partialTick));
-            Vec3 center = predicted.add(0, entity.getBbHeight() * 0.5, 0);
+            // 如果进入危险范围，且开启了音效，标记需要播放声音
+            if (intensity >= 0.95f && HudConfig.soundEnabled) {
+                playSound = true;
+            }
 
+            Vec3 center = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
             Vec3 dir = center.subtract(eyePos).normalize();
-
-            double x = dir.dot(right);
-            double y = dir.dot(up);
-            double z = dir.dot(forward);
-
+            double x = dir.dot(right), y = dir.dot(up), z = dir.dot(forward);
             boolean inView = z > 0.1 && (Math.abs(x) < z * tanHalfFovX) && (Math.abs(y) < z * tanHalfFovY);
 
             float brightness = intensity >= 0.95f ? 1.0f : Math.max(0.2f, pulse * intensity);
@@ -93,24 +93,16 @@ public class EntityWarningRenderer {
             int bgRed = ((int) (alpha * 0.4f) << 24) | 0xFF0000;
 
             if (inView) {
-                // 计算原始屏幕坐标
                 float tx = (float) (cx + (x / z) / tanHalfFovX * cx);
                 float ty = (float) (cy - (y / z) / tanHalfFovY * cy);
-
-                // === 防抖：屏幕坐标平滑 ===
                 SmoothPos sp = entityScreenCache.computeIfAbsent(entity.getId(), k -> new SmoothPos(tx, ty));
-                float dx = tx - sp.x;
-                float dy = ty - sp.y;
-                // 如果移动幅度大于 1 像素，才进行平滑跟随，否则保持静止（死区）
-                if (dx * dx + dy * dy > 1.0f) {
+                float ddx = tx - sp.x, ddy = ty - sp.y;
+                if (ddx * ddx + ddy * ddy > 1.0f) {
                     sp.x = Mth.lerp(0.25f, sp.x, tx);
                     sp.y = Mth.lerp(0.25f, sp.y, ty);
                 }
-
                 int boxW = 20, boxH = 30;
-                int left = (int) (sp.x - boxW / 2.0);
-                int top = (int) (sp.y - boxH / 2.0);
-
+                int left = (int) (sp.x - boxW / 2.0), top = (int) (sp.y - boxH / 2.0);
                 g.fill(left, top, left + boxW, top + boxH, bgRed);
                 g.fill(left, top, left + boxW, top + 2, mainRed);
                 g.fill(left, top + boxH - 2, left + boxW, top + boxH, mainRed);
@@ -118,9 +110,8 @@ public class EntityWarningRenderer {
                 g.fill(left + boxW - 2, top, left + boxW, top + boxH, mainRed);
             } else {
                 double angle;
-                if (z > 0) {
-                    angle = Math.atan2(y, x);
-                } else {
+                if (z > 0) angle = Math.atan2(y, x);
+                else {
                     if (Math.abs(x) > Math.abs(y)) angle = x > 0 ? 0 : Math.PI;
                     else angle = y > 0 ? Math.PI / 2 : -Math.PI / 2;
                     angle += Math.atan2(y, Math.abs(x)) * 0.2;
@@ -129,85 +120,73 @@ public class EntityWarningRenderer {
             }
         }
 
+        // 播放警告音效（1秒冷却）
+        if (playSound) {
+            long now = System.currentTimeMillis();
+            if (now - lastSoundTime > 1000) {
+                player.playSound(SoundEvents.CREEPER_PRIMED, 0.5f, 1.0f);
+                lastSoundTime = now;
+            }
+        }
+
+        // ... 边缘指示器合并与绘制逻辑保持不变 ...
         if (edgeCandidates.isEmpty()) return;
 
-        // 角度分组合并
         edgeCandidates.sort(Comparator.comparingDouble(EdgeCandidate::angle));
         List<MergedIndicator> merged = new ArrayList<>();
         double mergeThreshold = Math.toRadians(12);
-
         for (var c : edgeCandidates) {
             boolean consumed = false;
             for (var m : merged) {
                 if (Math.abs(angleDiff(m.angle, c.angle)) < mergeThreshold) {
-                    m.count++;
-                    m.intensity = Math.max(m.intensity, c.intensity);
-                    consumed = true;
-                    break;
+                    m.count++; m.intensity = Math.max(m.intensity, c.intensity); consumed = true; break;
                 }
             }
             if (!consumed) merged.add(new MergedIndicator(c.angle, 1, c.intensity));
         }
 
-        // 拉开重叠
         double minGap = Math.toRadians(15);
         double lastAngle = Double.NEGATIVE_INFINITY;
-        double maxX = W / 2.0 - 30;
-        double maxY = H / 2.0 - 30;
+        double maxX = W / 2.0 - 30, maxY = H / 2.0 - 30;
 
-        // 清除多余的边缘缓存（如果合并后的指示器数量变少）
-        while (edgeScreenCache.size() > merged.size()) {
-            edgeScreenCache.remove(edgeScreenCache.size() - 1);
-        }
+        while (edgeScreenCache.size() > merged.size()) edgeScreenCache.remove(edgeScreenCache.size() - 1);
 
         for (int i = 0; i < merged.size(); i++) {
             var m = merged.get(i);
             if (m.angle - lastAngle < minGap) m.angle = lastAngle + minGap;
             lastAngle = m.angle;
 
-            double cosA = Math.cos(m.angle);
-            double sinA = Math.sin(m.angle);
+            double cosA = Math.cos(m.angle), sinA = Math.sin(m.angle);
             double scale = Math.min(Math.abs(maxX / cosA), Math.abs(maxY / sinA));
-            float tx = (float) (cx + cosA * scale);
-            float ty = (float) (cy - sinA * scale);
-
-            // === 边缘指示器坐标平滑 ===
-            while (edgeScreenCache.size() <= i) {
-                edgeScreenCache.add(new SmoothPos(tx, ty));
-            }
+            float tx = (float) (cx + cosA * scale), ty = (float) (cy - sinA * scale);
+            while (edgeScreenCache.size() <= i) edgeScreenCache.add(new SmoothPos(tx, ty));
             SmoothPos sp = edgeScreenCache.get(i);
-            float dx = tx - sp.x;
-            float dy = ty - sp.y;
-            if (dx * dx + dy * dy > 1.0f) {
+            float ddx = tx - sp.x, ddy = ty - sp.y;
+            if (ddx * ddx + ddy * ddy > 1.0f) {
                 sp.x = Mth.lerp(0.3f, sp.x, tx);
                 sp.y = Mth.lerp(0.3f, sp.y, ty);
             }
-
             drawIndicator(g, client, (int) sp.x, (int) sp.y, m.angle, m.count, m.intensity, pulse);
         }
     }
 
+    // ... 下方 drawIndicator, angleDiff, drawThickLine 等方法保持不变 ...
     private static double angleDiff(double a, double b) {
         double d = Math.abs(a - b) % (2 * Math.PI);
         return d > Math.PI ? 2 * Math.PI - d : d;
     }
-
     private record EdgeCandidate(double angle, float intensity, int mainColor) {}
     private static class MergedIndicator {
         double angle; int count; float intensity;
         MergedIndicator(double a, int c, float i) { angle = a; count = c; intensity = i; }
     }
-
-    private static void drawIndicator(GuiGraphicsExtractor g, Minecraft client,
-                                      int x, int y, double angle, int count, float intensity, float pulse) {
+    private static void drawIndicator(GuiGraphicsExtractor g, Minecraft client, int x, int y, double angle, int count, float intensity, float pulse) {
         float brightness = intensity >= 0.95f ? 1.0f : Math.max(0.2f, pulse * intensity);
         int alpha = (int) (255 * brightness);
         int mainRed = (alpha << 24) | 0xFF0000;
         int innerRed = (alpha << 24) | 0xAA0000;
         int white = (alpha << 24) | 0xFFFFFF;
-
         int r = count > 1 ? 12 : 10;
-
         for (int dy = -r; dy <= r; dy++) {
             int width = (int) Math.sqrt(r * r - dy * dy);
             g.fill(x - width, y + dy, x + width + 1, y + dy + 1, mainRed);
@@ -217,7 +196,6 @@ public class EntityWarningRenderer {
             int width = (int) Math.sqrt(r2 * r2 - dy * dy);
             g.fill(x - width, y + dy, x + width + 1, y + dy + 1, innerRed);
         }
-
         if (count > 1) {
             String text = "×" + count;
             int w = client.font.width(text);
@@ -226,16 +204,9 @@ public class EntityWarningRenderer {
             g.fill(x - 1, y - 5, x + 1, y + 2, white);
             g.fill(x - 1, y + 4, x + 1, y + 6, white);
         }
-
-        double cosA = Math.cos(angle);
-        double sinA = Math.sin(angle);
-        int sx = x + (int) (cosA * r);
-        int sy = y - (int) (sinA * r);
-        int tx = x + (int) (cosA * (r + 8));
-        int ty = y - (int) (sinA * (r + 8));
-        drawThickLine(g, sx, sy, tx, ty, mainRed, 2);
+        double cosA = Math.cos(angle), sinA = Math.sin(angle);
+        drawThickLine(g, x + (int) (cosA * r), y - (int) (sinA * r), x + (int) (cosA * (r + 8)), y - (int) (sinA * (r + 8)), mainRed, 2);
     }
-
     private static void drawThickLine(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1, int color, int thickness) {
         int dx = x1 - x0, dy = y1 - y0;
         int steps = Math.max(Math.abs(dx), Math.abs(dy));
@@ -243,8 +214,7 @@ public class EntityWarningRenderer {
         int half = thickness / 2;
         int stepSize = Math.max(1, steps / 4);
         for (int i = 0; i <= steps; i += stepSize) {
-            int px = x0 + dx * i / steps;
-            int py = y0 + dy * i / steps;
+            int px = x0 + dx * i / steps, py = y0 + dy * i / steps;
             g.fill(px - half, py - half, px + half + 1, py + half + 1, color);
         }
         g.fill(x1 - half, y1 - half, x1 + half + 1, y1 + half + 1, color);

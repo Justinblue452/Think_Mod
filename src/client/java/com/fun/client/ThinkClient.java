@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.core.BlockPos;
@@ -38,6 +39,10 @@ public class ThinkClient implements ClientModInitializer {
 				(g, delta) -> { if (HudConfig.hudVisible) EntityWarningRenderer.render(g, delta); });
 
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
+
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			EntityWarningRenderer.clearCache();
+		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			KeyBindings.tick();
@@ -75,25 +80,29 @@ public class ThinkClient implements ClientModInitializer {
 												HudConfig.hudVisible ? Component.translatable("think.state.on") : Component.translatable("think.state.off")));
 										return 1;
 									})))
-					// 传送门助手指令
 					.then(ClientCommands.literal("portal")
 							.then(ClientCommands.literal("set")
 									.executes(c -> {
 										var src = c.getSource();
 										var pos = BlockPos.containing(src.getPosition());
 										var level = src.getPlayer().level();
-
-										// 修复：使用极其稳定的原版常量判断
 										String dim = "minecraft:overworld";
 										if (level.dimension() == net.minecraft.world.level.Level.NETHER) {
 											dim = "minecraft:the_nether";
 										} else if (level.dimension() == net.minecraft.world.level.Level.END) {
 											dim = "minecraft:the_end";
 										}
-
-										PortalAssistant.setTarget(pos.getX(), pos.getZ(), dim);
+										// 完整传递 X/Y/Z
+										PortalAssistant.setTarget(pos.getX(), pos.getY(), pos.getZ(), dim);
 										ConfigManager.save();
 										src.sendFeedback(Component.translatable("think.portal.set", pos.getX(), pos.getZ()));
+										return 1;
+									}))
+							.then(ClientCommands.literal("clear")
+									.executes(c -> {
+										PortalAssistant.clearTarget();
+										ConfigManager.save();
+										c.getSource().sendFeedback(Component.translatable("think.portal.cleared"));
 										return 1;
 									}))
 							.then(ClientCommands.literal("where")
@@ -114,7 +123,6 @@ public class ThinkClient implements ClientModInitializer {
 										}
 										return 1;
 									})))
-					// 原有 warn 指令
 					.then(ClientCommands.literal("warn")
 							.then(ClientCommands.literal("add")
 									.then(ClientCommands.argument("entityId", StringArgumentType.word())
