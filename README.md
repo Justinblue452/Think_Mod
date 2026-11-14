@@ -71,3 +71,4 @@ A client-side utility mod for Minecraft 26.3 (1.21.6+) on Fabric. It is aimed at
 ---
 
 ## 指令 / Commands
+### /think warn add \<EntityID>

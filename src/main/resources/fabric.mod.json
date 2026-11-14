@@ -3,15 +3,15 @@
 	"id": "think",
 	"version": "${version}",
 	"name": "Think",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Let Steve think!",
 	"authors": [
-		"Me!"
+		"Justin_Yan"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/think-justin_yan",
+		"sources": "https://github.com/Justinblue452/Think_Mod"
 	},
-	"license": "CC0-1.0",
+	"license": "LGPL-3.0",
 	"icon": "assets/think/icon.png",
 	"environment": "*",
 	"entrypoints": {
