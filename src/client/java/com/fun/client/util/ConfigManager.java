@@ -32,14 +32,12 @@ public class ConfigManager {
         double detectRange = 16.0;
         double warningRange = 8.0;
         double dangerRange = 4.0;
+        int maxWarningEntities = 16;
     }
 
     public static void load() {
         try {
-            if (!Files.exists(CONFIG_PATH)) {
-                save();
-                return;
-            }
+            if (!Files.exists(CONFIG_PATH)) { save(); return; }
             try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
                 Data d = GSON.fromJson(reader, Data.class);
                 if (d != null) {
@@ -56,6 +54,7 @@ public class ConfigManager {
                     HudConfig.detectRange = d.detectRange;
                     HudConfig.warningRange = d.warningRange;
                     HudConfig.dangerRange = d.dangerRange;
+                    HudConfig.maxWarningEntities = d.maxWarningEntities;
                 }
             }
         } catch (IOException e) {
@@ -80,6 +79,7 @@ public class ConfigManager {
             d.detectRange = HudConfig.detectRange;
             d.warningRange = HudConfig.warningRange;
             d.dangerRange = HudConfig.dangerRange;
+            d.maxWarningEntities = HudConfig.maxWarningEntities;
 
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
                 GSON.toJson(d, writer);

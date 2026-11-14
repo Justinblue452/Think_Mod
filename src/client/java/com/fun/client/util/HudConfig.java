@@ -15,9 +15,11 @@ public class HudConfig {
 
     // 实体警告配置
     public static boolean showEntityWarning = true;
-    // 默认警示苦力怕
     public static Set<String> warningEntityTypes = new HashSet<>(Set.of("minecraft:creeper"));
-    public static double detectRange = 16.0;   // 侦测范围
-    public static double warningRange = 8.0;   // 警告范围
-    public static double dangerRange = 4.0;    // 危险范围（满强度）
+    public static double detectRange = 16.0;
+    public static double warningRange = 8.0;
+    public static double dangerRange = 4.0;
+
+    // 最多同时显示的警告实体数量（防止刷怪塔导致 HUD 爆炸）
+    public static int maxWarningEntities = 16;
 }

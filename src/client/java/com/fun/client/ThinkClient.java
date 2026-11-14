@@ -157,6 +157,15 @@ public class ThinkClient implements ClientModInitializer {
 												t, String.format("%.2f", CoordinateUtil.ticksToSeconds(t))));
 										return 1;
 									})))
+					.then(ClientCommands.literal("max")
+							.then(ClientCommands.argument("count", IntegerArgumentType.integer(1, 64))
+									.executes(c -> {
+										int n = IntegerArgumentType.getInteger(c, "count");
+										HudConfig.maxWarningEntities = n;
+										ConfigManager.save();
+										c.getSource().sendFeedback(Component.literal("§a[Think] 同时显示警告实体的上限: " + n));
+										return 1;
+									})))
 			);
 		});
 	}
