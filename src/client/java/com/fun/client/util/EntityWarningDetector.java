@@ -15,11 +15,15 @@ public class EntityWarningDetector {
     public record WarningTarget(Entity entity, double distance, float intensity) {}
 
     private static final List<WarningTarget> targets = new ArrayList<>();
-    // 缓存解析好的 EntityType，热路径不再做字符串比较
     private static final Set<EntityType<?>> cachedWarningTypes = new HashSet<>();
-    private static String cachedConfigHash = "";
+    private static int cachedTypeHash = 0;
+    private static int tickCounter = 0;
 
     public static void update() {
+        // 性能优化：每 2 tick 扫描一次（10Hz），人眼几乎无法感知延迟
+        tickCounter++;
+        if (tickCounter % 2 != 0) return;
+
         targets.clear();
         var client = Minecraft.getInstance();
         if (client.level == null || client.player == null || !HudConfig.showEntityWarning) return;
@@ -28,7 +32,6 @@ public class EntityWarningDetector {
         if (cachedWarningTypes.isEmpty()) return;
 
         var p = client.player;
-        // 使用缓存的 EntityType 集合做快速过滤
         var entities = client.level.getEntities(p, p.getBoundingBox().inflate(HudConfig.detectRange),
                 e -> e != p && cachedWarningTypes.contains(e.getType()));
 
@@ -50,17 +53,18 @@ public class EntityWarningDetector {
             targets.add(new WarningTarget(e, dist, intensity));
         }
 
+        // 排序 + 截断
         targets.sort((a, b) -> Double.compare(a.distance(), b.distance()));
-        if (targets.size() > HudConfig.maxWarningEntities) {
-            targets.subList(HudConfig.maxWarningEntities, targets.size()).clear();
+        while (targets.size() > HudConfig.maxWarningEntities) {
+            targets.remove(targets.size() - 1);
         }
     }
 
     private static void refreshTypeCacheIfNeeded() {
-        // 用简单字符串哈希检测配置变更，避免每次 tick 重建
-        String hash = String.join(",", HudConfig.warningEntityTypes);
-        if (hash.equals(cachedConfigHash)) return;
-        cachedConfigHash = hash;
+        // 用整型 hashCode 代替字符串拼接，避免每 tick 的 GC 压力
+        int currentHash = HudConfig.warningEntityTypes.hashCode();
+        if (currentHash == cachedTypeHash) return;
+        cachedTypeHash = currentHash;
         cachedWarningTypes.clear();
         for (String id : HudConfig.warningEntityTypes) {
             Identifier rl = Identifier.tryParse(id);
