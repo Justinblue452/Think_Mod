@@ -48,5 +48,10 @@
   "think.portal.cleared": "§ePortal target cleared",
 
   "think.yaxis.up": "↑ %d",
-  "think.yaxis.down": "↓ %d"
+  "think.yaxis.down": "↓ %d",
+  "think.radial.cancel_locator": "Cancel Locator",
+  "think.radial.reset_all": "Reset All",
+  "think.locate.cancelled": "§e[Think] Current locator session cancelled",
+  "think.locate.none": "§e[Think] No locator session is active",
+  "think.command.reset_all": "§a[Think] All tasks and data cleared"
 }

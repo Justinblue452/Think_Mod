@@ -48,5 +48,10 @@
   "think.portal.cleared": "§e已清除传送门目标",
 
   "think.yaxis.up": "↑ %d",
-  "think.yaxis.down": "↓ %d"
+  "think.yaxis.down": "↓ %d",
+  "think.radial.cancel_locator": "取消定位",
+  "think.radial.reset_all": "全部重置",
+  "think.locate.cancelled": "§e[Think] 已取消当前定位会话",
+  "think.locate.none": "§e[Think] 当前没有进行中的定位",
+  "think.command.reset_all": "§a[Think] 已清除所有任务与定位数据"
 }

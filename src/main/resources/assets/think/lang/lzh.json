@@ -49,5 +49,10 @@
   "think.portal.cleared": "§e界門之標已除",
 
   "think.yaxis.up": "↑ %d",
-  "think.yaxis.down": "↓ %d"
+  "think.yaxis.down": "↓ %d",
+  "think.radial.cancel_locator": "止尋蹤",
+  "think.radial.reset_all": "盡清",
+  "think.locate.cancelled": "§e[思] 尋蹤已止",
+  "think.locate.none": "§e[思] 今無尋蹤之事",
+  "think.command.reset_all": "§a[思] 諸事與定位之數皆已清"
 }
