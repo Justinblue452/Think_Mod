@@ -1,32 +1,16 @@
 {
   "key.category.think.main": "Think Client",
+
   "key.think.reset": "Reset Locator Data",
   "key.think.toggleHud": "Toggle HUD",
   "key.think.editor": "Open HUD Editor",
+  "key.think.startLocate": "Start Eye Locator",
+  "key.think.showCoords": "Show Translated Coords",
+  "key.think.togglePortalTarget": "Set/Clear Portal Target",
 
   "think.screen.title": "Think HUD Editor",
   "think.screen.arrow": "Arrow",
-  "think.screen.info": "Info Panel",
-  "think.screen.hint": "Drag the white areas to reposition. Press ESC to exit.",
-
-  "think.hud.coord": "XYZ: %d, %d, %d",
-  "think.hud.facing": "Facing: %s",
-  "think.hud.biome": "Biome: %s",
-  "think.hud.distance": "Target Dist: %s blocks",
-  "think.hud.distance.none": "Target Dist: --",
-  "think.hud.nether": "Nether: %s",
-  "think.hud.overworld": "Overworld: %s",
-
-  "think.command.reset": "[Think] Locator data reset.",
-  "think.command.status.valid": "[Think] Target: (%s, %s), Rays: %d",
-  "think.command.status.invalid": "[Think] No valid target. (Eyes: %d, Rays: %d)",
-  "think.command.hud": "[Think] HUD: %s",
-  "think.command.coord.nether": "[Think] Nether coord: %s",
-  "think.command.coord.overworld": "[Think] Overworld coord: %s",
-  "think.command.tick": "[Think] %d ticks ≈ %s seconds",
-  "think.state.on": "ON",
-  "think.state.off": "OFF",
-  "key.think.startLocate": "Start Eye Locator",
+  "think.screen.hint": "Drag white areas to reposition. Press ESC to exit.",
 
   "think.locate.start": "§e[Think] Locator activated: throw the 1st Eye of Ender",
   "think.locate.first_recorded": "§e[Think] 1st eye recorded. Move at least 20 blocks in a different direction, then throw the 2nd",
@@ -37,5 +21,19 @@
 
   "think.session.waiting_first": "Locating (0/2): Throw 1st Eye of Ender",
   "think.session.move_more": "Recorded (1/2): Move %d more blocks",
-  "think.session.ready": "Recorded (1/2): Position OK ✓ Throw 2nd eye"
+  "think.session.ready": "Recorded (1/2): Position OK ✓ Throw 2nd eye",
+
+  "think.command.reset": "§a[Think] Locator data reset.",
+  "think.command.status.valid": "§a[Think] Target: (%s, %s) Rays: %d",
+  "think.command.status.invalid": "§e[Think] No valid target. (Eyes: %d, Rays: %d)",
+  "think.command.hud": "§a[Think] HUD: %s",
+  "think.command.tick": "§a[Think] %d ticks ≈ %s seconds",
+  "think.state.on": "ON",
+  "think.state.off": "OFF",
+
+  "think.portal.toNether": "§bNether coords: %d, %d, %d",
+  "think.portal.toOverworld": "§bOverworld coords: %d, %d, %d",
+  "think.portal.wrongDim": "§eCurrent dimension does not support conversion",
+  "think.portal.set": "§aPortal target set at: %d, %d",
+  "think.portal.cleared": "§ePortal target cleared"
 }

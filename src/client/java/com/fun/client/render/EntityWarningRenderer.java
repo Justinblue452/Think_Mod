@@ -11,9 +11,22 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class EntityWarningRenderer {
+
+    // === 防抖缓存 ===
+    // 视野内实体的屏幕坐标平滑缓存 (Key: EntityId)
+    private static final Map<Integer, SmoothPos> entityScreenCache = new HashMap<>();
+    // 边缘指示器的屏幕坐标平滑缓存 (基于排序后的索引)
+    private static final List<SmoothPos> edgeScreenCache = new ArrayList<>();
+
+    private static class SmoothPos {
+        float x, y;
+        SmoothPos(float x, float y) { this.x = x; this.y = y; }
+    }
 
     public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
         if (!HudConfig.hudVisible || !HudConfig.showEntityWarning) return;
@@ -23,20 +36,18 @@ public class EntityWarningRenderer {
         var player = client.player;
         if (player == null || client.level == null) return;
 
-        // === 关键：获取部分 tick，用于所有插值 ===
-        float partialTick = delta.getGameTimeDeltaPartialTick(true);
+        // 获取平滑时间
+        float partialTick = delta.getGameTimeDeltaTicks() % 1.0f;
 
         int W = client.getWindow().getGuiScaledWidth();
         int H = client.getWindow().getGuiScaledHeight();
         int cx = W / 2;
         int cy = H / 2;
 
-        // 平滑的玩家视角
         Vec3 eyePos = player.getEyePosition(partialTick);
         Vec3 forward = player.getViewVector(partialTick);
-        // 用世界 up 与 forward 叉乘代替 getUpVector，兼容性更好且更便宜
         Vec3 right = forward.cross(new Vec3(0, 1, 0));
-        if (right.lengthSqr() < 1e-6) right = new Vec3(1, 0, 0); // 正仰视/俯视保护
+        if (right.lengthSqr() < 1e-6) right = new Vec3(1, 0, 0);
         right = right.normalize();
         Vec3 up = right.cross(forward).normalize();
 
@@ -45,18 +56,25 @@ public class EntityWarningRenderer {
         double tanHalfFovY = Math.tan(Math.toRadians(fov / 2.0));
         double tanHalfFovX = tanHalfFovY * aspectRatio;
 
-        // 呼吸脉冲：跟随游戏时间，暂停时也暂停
         float gameTime = client.level.getGameTime() + partialTick;
         float pulse = Mth.sin(gameTime * 0.15f) * 0.4f + 0.6f;
 
         List<EdgeCandidate> edgeCandidates = new ArrayList<>();
+        var targets = EntityWarningDetector.getTargets();
 
-        for (var target : EntityWarningDetector.getTargets()) {
+        // 清理已经不在目标列表中的实体平滑缓存，防止内存泄漏（目标极少，开销极低）
+        if (!entityScreenCache.isEmpty()) {
+            entityScreenCache.keySet().removeIf(id -> {
+                for (var t : targets) if (t.entity().getId() == id) return false;
+                return true;
+            });
+        }
+
+        for (var target : targets) {
             Entity entity = target.entity();
             float intensity = target.intensity();
 
-            // === 关键：实体位置插值 + 速度预判 ===
-            // 用上 1 tick 的移动速度外推部分 tick，得到平滑的当前位置
+            // 保留 3D 速度预判
             Vec3 rawPos = entity.position();
             Vec3 predicted = rawPos.add(entity.getDeltaMovement().scale(partialTick));
             Vec3 center = predicted.add(0, entity.getBbHeight() * 0.5, 0);
@@ -75,11 +93,23 @@ public class EntityWarningRenderer {
             int bgRed = ((int) (alpha * 0.4f) << 24) | 0xFF0000;
 
             if (inView) {
-                double screenX = cx + (x / z) / tanHalfFovX * cx;
-                double screenY = cy - (y / z) / tanHalfFovY * cy;
+                // 计算原始屏幕坐标
+                float tx = (float) (cx + (x / z) / tanHalfFovX * cx);
+                float ty = (float) (cy - (y / z) / tanHalfFovY * cy);
+
+                // === 防抖：屏幕坐标平滑 ===
+                SmoothPos sp = entityScreenCache.computeIfAbsent(entity.getId(), k -> new SmoothPos(tx, ty));
+                float dx = tx - sp.x;
+                float dy = ty - sp.y;
+                // 如果移动幅度大于 1 像素，才进行平滑跟随，否则保持静止（死区）
+                if (dx * dx + dy * dy > 1.0f) {
+                    sp.x = Mth.lerp(0.25f, sp.x, tx);
+                    sp.y = Mth.lerp(0.25f, sp.y, ty);
+                }
+
                 int boxW = 20, boxH = 30;
-                int left = (int) (screenX - boxW / 2.0);
-                int top = (int) (screenY - boxH / 2.0);
+                int left = (int) (sp.x - boxW / 2.0);
+                int top = (int) (sp.y - boxH / 2.0);
 
                 g.fill(left, top, left + boxW, top + boxH, bgRed);
                 g.fill(left, top, left + boxW, top + 2, mainRed);
@@ -101,7 +131,7 @@ public class EntityWarningRenderer {
 
         if (edgeCandidates.isEmpty()) return;
 
-        // 角度合并
+        // 角度分组合并
         edgeCandidates.sort(Comparator.comparingDouble(EdgeCandidate::angle));
         List<MergedIndicator> merged = new ArrayList<>();
         double mergeThreshold = Math.toRadians(12);
@@ -125,17 +155,35 @@ public class EntityWarningRenderer {
         double maxX = W / 2.0 - 30;
         double maxY = H / 2.0 - 30;
 
-        for (var m : merged) {
+        // 清除多余的边缘缓存（如果合并后的指示器数量变少）
+        while (edgeScreenCache.size() > merged.size()) {
+            edgeScreenCache.remove(edgeScreenCache.size() - 1);
+        }
+
+        for (int i = 0; i < merged.size(); i++) {
+            var m = merged.get(i);
             if (m.angle - lastAngle < minGap) m.angle = lastAngle + minGap;
             lastAngle = m.angle;
 
             double cosA = Math.cos(m.angle);
             double sinA = Math.sin(m.angle);
             double scale = Math.min(Math.abs(maxX / cosA), Math.abs(maxY / sinA));
-            int ex = (int) (cx + cosA * scale);
-            int ey = (int) (cy - sinA * scale);
+            float tx = (float) (cx + cosA * scale);
+            float ty = (float) (cy - sinA * scale);
 
-            drawIndicator(g, client, ex, ey, m.angle, m.count, m.intensity, pulse);
+            // === 边缘指示器坐标平滑 ===
+            while (edgeScreenCache.size() <= i) {
+                edgeScreenCache.add(new SmoothPos(tx, ty));
+            }
+            SmoothPos sp = edgeScreenCache.get(i);
+            float dx = tx - sp.x;
+            float dy = ty - sp.y;
+            if (dx * dx + dy * dy > 1.0f) {
+                sp.x = Mth.lerp(0.3f, sp.x, tx);
+                sp.y = Mth.lerp(0.3f, sp.y, ty);
+            }
+
+            drawIndicator(g, client, (int) sp.x, (int) sp.y, m.angle, m.count, m.intensity, pulse);
         }
     }
 
@@ -160,7 +208,6 @@ public class EntityWarningRenderer {
 
         int r = count > 1 ? 12 : 10;
 
-        // 逐行 fill 绘制圆形（O(r) 而非 O(r²)）
         for (int dy = -r; dy <= r; dy++) {
             int width = (int) Math.sqrt(r * r - dy * dy);
             g.fill(x - width, y + dy, x + width + 1, y + dy + 1, mainRed);
@@ -180,7 +227,6 @@ public class EntityWarningRenderer {
             g.fill(x - 1, y + 4, x + 1, y + 6, white);
         }
 
-        // 箭头：复用已算好的 cos/sin（避免重复三角函数调用）
         double cosA = Math.cos(angle);
         double sinA = Math.sin(angle);
         int sx = x + (int) (cosA * r);

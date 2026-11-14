@@ -1,23 +1,63 @@
 package com.fun.client.render;
 
-import com.fun.client.util.HudCache;
 import com.fun.client.util.HudConfig;
+import com.fun.client.util.PortalAssistant;
 import com.fun.client.util.StrongholdLocator;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
 public class NavigationArrowRenderer {
     private static float smoothAngle = 0f;
 
     public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
         var client = Minecraft.getInstance();
-        if (client.player == null || !StrongholdLocator.hasValidTarget()) return;
+        var player = client.player;
+        if (player == null || client.level == null) return;
 
-        float target = HudCache.arrowAngle;
-        smoothAngle = Mth.lerp(0.25f, smoothAngle, target);
-        if (Math.abs(smoothAngle - target) < 0.5f) smoothAngle = target;
+        double targetX, targetZ;
+        int mainColor;
+
+        // === 选择目标 ===
+        if (PortalAssistant.getArrowMode() == PortalAssistant.ArrowMode.PORTAL && PortalAssistant.hasTarget()) {
+            // 获取记录的目标
+            targetX = PortalAssistant.getTargetX();
+            targetZ = PortalAssistant.getTargetZ();
+            String targetDim = PortalAssistant.getTargetDim();
+
+            var currentDim = client.level.dimension();
+
+            // 判断当前维度和目标维度，进行 8:1 转换
+            if (currentDim == Level.NETHER && !targetDim.contains("the_nether")) {
+                // 目标在主世界，但玩家在下界：需缩小 8 倍
+                targetX = targetX / 8.0;
+                targetZ = targetZ / 8.0;
+            } else if (currentDim == Level.OVERWORLD && targetDim.contains("the_nether")) {
+                // 目标在下界，但玩家在主世界：需放大 8 倍
+                targetX = targetX * 8.0;
+                targetZ = targetZ * 8.0;
+            }
+
+            mainColor = 0xFF00DDFF; // 蓝色箭头
+        } else if (StrongholdLocator.hasValidTarget()) {
+            targetX = StrongholdLocator.getTargetX();
+            targetZ = StrongholdLocator.getTargetZ();
+            mainColor = 0xFFFFFFFF; // 白色箭头
+        } else {
+            return;
+        }
+
+        // 计算角度
+        double dx = targetX - player.getX();
+        double dz = targetZ - player.getZ();
+        double targetYaw = Math.toDegrees(Math.atan2(-dx, dz));
+        float rawAngle = (float) (targetYaw - player.getYRot());
+
+        // 平滑
+        smoothAngle = Mth.lerp(0.25f, smoothAngle, rawAngle);
+        if (Math.abs(smoothAngle - rawAngle) < 0.5f) smoothAngle = rawAngle;
 
         int screenW = client.getWindow().getGuiScaledWidth();
         int screenH = client.getWindow().getGuiScaledHeight();
@@ -33,9 +73,10 @@ public class NavigationArrowRenderer {
         float x3 = cx + Mth.cos(rr) * size * 0.6f, y3 = cy + Mth.sin(rr) * size * 0.6f;
 
         drawTriangle(g, x1, y1, x2, y2, x3, y3, 0xFF000000, 1.5f);
-        drawTriangle(g, x1, y1, x2, y2, x3, y3, 0xFFFFFFFF, 0f);
+        drawTriangle(g, x1, y1, x2, y2, x3, y3, mainColor, 0f);
     }
 
+    // ... 下方保留原有的 drawTriangle / pointInTri / sign 方法不变 ...
     private static void drawTriangle(GuiGraphicsExtractor g, float x1, float y1, float x2, float y2, float x3, float y3, int color, float expand) {
         int minX = (int) Math.floor(Math.min(x1, Math.min(x2, x3)) - expand);
         int maxX = (int) Math.ceil(Math.max(x1, Math.max(x2, x3)) + expand);

@@ -5,19 +5,12 @@
   "key.think.toggleHud": "啟閉懸示",
   "key.think.editor": "整懸示之位",
   "key.think.startLocate": "始尋終眇眼",
+  "key.think.showCoords": "示異界座標",
+  "key.think.togglePortalTarget": "置/除界門之標",
 
   "think.screen.title": "思・懸示整位",
   "think.screen.arrow": "矢",
-  "think.screen.info": "文牘",
   "think.screen.hint": "曳白處以移其位，按 ESC 則退",
-
-  "think.hud.coord": "座標：%d, %d, %d",
-  "think.hud.facing": "所嚮：%s",
-  "think.hud.biome": "生態域：%s",
-  "think.hud.distance": "距標：%s 方",
-  "think.hud.distance.none": "距標：未定",
-  "think.hud.nether": "地府座標：%s",
-  "think.hud.overworld": "主界座標：%s",
 
   "think.locate.start": "§e[思] 尋蹤已啟：請擲第一枚終眇眼",
   "think.locate.first_recorded": "§e[思] 首枚已錄。請行逾二十方，轉向他處，再擲次枚",
@@ -34,9 +27,13 @@
   "think.command.status.valid": "§a[思] 標的：(%s, %s)　矢數：%d",
   "think.command.status.invalid": "§e[思] 尚無定標（所見之眼：%d，已錄之矢：%d）",
   "think.command.hud": "§a[思] 懸示：%s",
-  "think.command.coord.nether": "§a[思] 地府對位：%s",
-  "think.command.coord.overworld": "§a[思] 主界對位：%s",
   "think.command.tick": "§a[思] %d 刻 ≈ %s 秒",
   "think.state.on": "啟",
-  "think.state.off": "閉"
+  "think.state.off": "閉",
+
+  "think.portal.toNether": "§b地府座標：%d, %d, %d",
+  "think.portal.toOverworld": "§b主界座標：%d, %d, %d",
+  "think.portal.wrongDim": "§e此界不可易算座標",
+  "think.portal.set": "§a界門之標已立：%d, %d",
+  "think.portal.cleared": "§e界門之標已除"
 }

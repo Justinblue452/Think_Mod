@@ -1,7 +1,6 @@
 package com.fun.client;
 
 import com.fun.client.render.EntityWarningRenderer;
-import com.fun.client.render.InfoHudRenderer;
 import com.fun.client.render.NavigationArrowRenderer;
 import com.fun.client.render.SessionHudRenderer;
 import com.fun.client.util.*;
@@ -31,10 +30,6 @@ public class ThinkClient implements ClientModInitializer {
 				(g, delta) -> { if (HudConfig.hudVisible && HudConfig.showArrow) NavigationArrowRenderer.render(g, delta); });
 
 		HudElementRegistry.attachElementBefore(VanillaHudElements.HOTBAR,
-				Identifier.fromNamespaceAndPath("think", "info_panel"),
-				(g, delta) -> { if (HudConfig.hudVisible && HudConfig.showInfo) InfoHudRenderer.render(g, delta); });
-
-		HudElementRegistry.attachElementBefore(VanillaHudElements.HOTBAR,
 				Identifier.fromNamespaceAndPath("think", "session_hud"),
 				(g, delta) -> { if (HudConfig.hudVisible) SessionHudRenderer.render(g, delta); });
 
@@ -47,7 +42,6 @@ public class ThinkClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			KeyBindings.tick();
 			StrongholdLocator.onClientTick();
-			HudCache.update();
 			EntityWarningDetector.update();
 		});
 
@@ -81,6 +75,46 @@ public class ThinkClient implements ClientModInitializer {
 												HudConfig.hudVisible ? Component.translatable("think.state.on") : Component.translatable("think.state.off")));
 										return 1;
 									})))
+					// 传送门助手指令
+					.then(ClientCommands.literal("portal")
+							.then(ClientCommands.literal("set")
+									.executes(c -> {
+										var src = c.getSource();
+										var pos = BlockPos.containing(src.getPosition());
+										var level = src.getPlayer().level();
+
+										// 修复：使用极其稳定的原版常量判断
+										String dim = "minecraft:overworld";
+										if (level.dimension() == net.minecraft.world.level.Level.NETHER) {
+											dim = "minecraft:the_nether";
+										} else if (level.dimension() == net.minecraft.world.level.Level.END) {
+											dim = "minecraft:the_end";
+										}
+
+										PortalAssistant.setTarget(pos.getX(), pos.getZ(), dim);
+										ConfigManager.save();
+										src.sendFeedback(Component.translatable("think.portal.set", pos.getX(), pos.getZ()));
+										return 1;
+									}))
+							.then(ClientCommands.literal("where")
+									.executes(c -> {
+										var src = c.getSource();
+										var pos = BlockPos.containing(src.getPosition());
+										var level = src.getPlayer().level();
+										if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+											var n = CoordinateUtil.overworldToNether(pos);
+											src.sendFeedback(Component.translatable("think.portal.toNether",
+													n.getX(), n.getY(), n.getZ()));
+										} else if (level.dimension() == net.minecraft.world.level.Level.NETHER) {
+											var o = CoordinateUtil.netherToOverworld(pos);
+											src.sendFeedback(Component.translatable("think.portal.toOverworld",
+													o.getX(), o.getY(), o.getZ()));
+										} else {
+											src.sendFeedback(Component.translatable("think.portal.wrongDim"));
+										}
+										return 1;
+									})))
+					// 原有 warn 指令
 					.then(ClientCommands.literal("warn")
 							.then(ClientCommands.literal("add")
 									.then(ClientCommands.argument("entityId", StringArgumentType.word())
@@ -113,6 +147,15 @@ public class ThinkClient implements ClientModInitializer {
 										c.getSource().sendFeedback(Component.literal("§a[Think] 当前警示实体: " + String.join(", ", HudConfig.warningEntityTypes)));
 										return 1;
 									}))
+							.then(ClientCommands.literal("max")
+									.then(ClientCommands.argument("count", IntegerArgumentType.integer(1, 32))
+											.executes(c -> {
+												int n = IntegerArgumentType.getInteger(c, "count");
+												HudConfig.maxWarningEntities = n;
+												ConfigManager.save();
+												c.getSource().sendFeedback(Component.literal("§a[Think] 同时显示警告实体上限: " + n));
+												return 1;
+											})))
 							.then(ClientCommands.literal("range")
 									.then(ClientCommands.argument("detect", DoubleArgumentType.doubleArg(1))
 											.then(ClientCommands.argument("warning", DoubleArgumentType.doubleArg(1))
@@ -132,39 +175,12 @@ public class ThinkClient implements ClientModInitializer {
 																c.getSource().sendFeedback(Component.literal(String.format("§a[Think] 范围已更新: 侦测 %.1f, 警告 %.1f, 危险 %.1f", detect, warning, danger)));
 																return 1;
 															}))))))
-					.then(ClientCommands.literal("coord")
-							.then(ClientCommands.literal("toNether")
-									.executes(c -> {
-										var s = c.getSource(); BlockPos p = BlockPos.containing(s.getPosition());
-										var r = CoordinateUtil.overworldToNether(p);
-										s.sendFeedback(Component.translatable("think.command.coord.nether",
-												String.format("%d, %d, %d", r.getX(), r.getY(), r.getZ())));
-										return 1;
-									}))
-							.then(ClientCommands.literal("toOverworld")
-									.executes(c -> {
-										var s = c.getSource(); BlockPos p = BlockPos.containing(s.getPosition());
-										var r = CoordinateUtil.netherToOverworld(p);
-										s.sendFeedback(Component.translatable("think.command.coord.overworld",
-												String.format("%d, %d, %d", r.getX(), r.getY(), r.getZ())));
-										return 1;
-									})))
 					.then(ClientCommands.literal("tick")
 							.then(ClientCommands.argument("ticks", IntegerArgumentType.integer())
 									.executes(c -> {
 										int t = IntegerArgumentType.getInteger(c, "ticks");
 										c.getSource().sendFeedback(Component.translatable("think.command.tick",
 												t, String.format("%.2f", CoordinateUtil.ticksToSeconds(t))));
-										return 1;
-									})))
-					.then(ClientCommands.literal("max")
-							.then(ClientCommands.argument("count", IntegerArgumentType.integer(1, 32))
-									.executes(c -> {
-										int n = IntegerArgumentType.getInteger(c, "count");
-										HudConfig.maxWarningEntities = n;
-										ConfigManager.save();
-										c.getSource().sendFeedback(Component.literal("§a[Think] 同时显示警告实体的上限: " + n
-												+ (n > 10 ? " §e（警告：超过 10 可能影响低端机性能）" : "")));
 										return 1;
 									})))
 			);
